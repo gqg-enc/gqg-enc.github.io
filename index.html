@@ -1,0 +1,116 @@
+<html>
+    <head>
+        <title>gqg email encryption</title>
+        <style>
+body {
+    background-color: #000;
+    font-family: SF Mono,Consolas,Liberation Mono,Menlo,Courier,monospace;
+    font-size: 9pt;
+    color: #eee;
+}
+#center {
+    margin: auto;
+    border: 1px solid #fff;
+    /*width: 512px;*/
+    padding: 16px;
+}
+i {
+    color: #888;
+}
+a {
+    color: #00f;
+}
+        </style>
+    </head>
+    <body>
+        <pre id="center">
+   __ _  __ _  __ _
+  / _` |/ _` |/ _` |
+ | (_| | (_| | (_| |
+  \__, |\__, |\__, |
+   __/ |   | | __/ |
+  |___/    |_||___/
+
+<font color="yellow">[ Description ]</font>
+
+gqg is a simple file/message encryption format, meant as a lightweight
+replacement for PGP/GPG.
+
+It uses Curve25519+Salsa20+Poly1305 (from libsodium) for encryption and
+authentication, and it features optional LZ4 compression.
+
+<font color="yellow">[ Plausible deniability ]</font>
+
+gqg gives you plausible deniability: when you send a message to another
+person, that person will have the ability to re-encrypt your message to say
+anything. So if that person chooses to publish what you wrote, you can
+always claim they changed the phrasing and re-encrypted it. There will be
+no way for a third party to verify who is telling the truth and who is
+lying based on the gqg crypto alone.
+
+<font color="yellow">[ Install ]</font>
+
+<font color="yellow">[ Repositories ]</font>
+
+gqg-lib: <a href="https://github.com/gqg-enc/gqg-lib">https://github.com/gqg-enc/gqg-lib</a>
+gqg-cli: <a href="https://github.com/gqg-enc/gqg-cli">https://github.com/gqg-enc/gqg-cli</a>
+
+<font color="yellow">[ Changelog ]</font>
+
+10 Feb 2021: 1.0.0:    Initial release
+
+<font color="yellow">[ Example ]</font>
+
+<font color="blue">alice:~</font> $ gqg befriend bob [GQG1-ID:OQnuMtm6XLAxJyKi492luHbHOTCwTXu7R8Dbhk8Cwzo=]
+<font color="blue">alice:~</font> $ echo "Hello World!" | gqg send bob
+[GQG1-MESSAGE:AZ4MDwnJEAL1OqXhjPxa31C7u5q/S72024/mjHIVMwBzPyUb2yLyRql7Z6kjBMbbNx4CZ8gqsJbpLf/BkF3bfM9/MjcwL31CavQE5F33JsD3qc+BMt6G]
+
+<font color="blue">bob:~</font> $ gqg befriend alice [GQG1-ID:obu5kINsaCI58QVUYSLE6mfn3awEiqdDSapflhpvqUw=]
+<font color="blue">bob:~</font> $ gqg receive
+[GQG1-MESSAGE:AZ4MDwnJEAL1OqXhjPxa31C7u5q/S72024/mjHIVMwBzPyUb2yLyRql7Z6kjBMbbNx4CZ8gqsJbpLf/BkF3bfM9/MjcwL31CavQE5F33JsD3qc+BMt6G]<i>eof</i>
+<font color="green">VERIFIED: alice</font>
+/home/bob/.gqg.dir/alice-2021-02-06T13:38:26.042150900+00:00.txt
+<font color="blue">bob:~</font> $ cat /home/bob/.gqg.dir/alice-2021-02-06T13:38:26.042150900+00:00.txt
+Hello World!
+
+<font color="yellow">[ Technical spec ]</font>
+
+Public keys are shared in their "ID-form":
+
+  [GQG1-ID:<i>{base64(pubkey)}</i>]
+
+A payload can be encoded in two different forms:
+
+  * messages: [GQG1-MESSAGE:<i>{base64(data)}</i>]
+  * files:    [GQG1-FILE:<i>{base64(data)}</i>]
+
+The base64'd data contain the following binary blobs, concatenated one after
+another (the final blob is variable-length):
+
+  <i>{sender_pk}</i> <i>{nonce}</i> <i>{nacl_box(encrypted_data, nonce, recipient_pk, sender_sk)}</i>
+
+The encrypted data, once decrypted, has the following binary layout (bytes
+are given in hexadecimal):
+
+  * messages: <i>{datastream}</i>
+  * files:    <i>{filename}</i> 00 <i>{datastream}</i>
+
+A <i>{filename}</i> will be rejected if any of the following is true:
+
+  * it is an invalid UTF-8 sequence
+  * it is empty
+  * it is longer than 32 UTF-8 characters
+  * it contains "/" or "\"
+  * it contains ".."
+
+Finally, the format of data stream optionally allows the user-provided raw
+data to be compressed, based on the value of the first byte:
+
+  00 <i>{rawdata}</i>
+  - or -
+  01 <i>{lz4_compress(rawdata)}</i>
+
+This concludes the description of the gqg format.
+
+<font color="yellow">EOF gqg 2021</font></div></body>
+</html>
